@@ -59,7 +59,12 @@ end
 
 if ~exist('initial_affine')
     initial_affine = eye(4)
+       
 end
+
+%% TIGER
+%initial_affine = [0.0, 0.0, 1.0, -5.0; 1.0, 0.0, 0.0, 25.0; 0.0, -1.0, 0.0, 65.0; 0.0, 0.0, 0.0, 1.0]
+
 A = initial_affine;
 fixed_scale = fixed_scale .* [1 1 1];
 
@@ -79,6 +84,8 @@ if ~exist('niter')
     % total number of iterations
     niter = 5000;
 end
+
+%niter = 2;
 
 if ~exist('eV')
     % velocity field update step size
@@ -1048,3 +1055,6 @@ nxJT = fix(nxJ0.*scalef);
 save([prefix 'transform_params.mat'],'target_name','parcellation_path','parcellation_voxel_size','parcellation_image_size','output_path_target','output_path_atlas','nxJ0','dxJ0','nxJT','dxJT','dxI','vname','Aname')
 transform_data(target_name,dxJ0,Aname,vname,dxI,parcellation_voxel_size,parcellation_image_size,'atlas',output_path_target,'linear')
 transform_data(parcellation_path,parcellation_voxel_size,Aname,vname,dxI,dxJT,nxJT,'target',output_path_atlas,'nearest')
+
+
+

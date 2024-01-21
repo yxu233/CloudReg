@@ -208,7 +208,15 @@ function [] = transform_data(path_to_source,source_voxel_size,path_to_affine,pat
     Idef = permute(Idef,[2 1 3]);
     destination_voxel_size = destination_voxel_size([2 1 3])
     avw = avw_hdr_make;
-    avw.hdr.dime.datatype = 4; % 16 bits
+    
+    
+    %%% TIGER CHANGED TO int32 instead if saving ATLAS --> TARGET
+    if strcmpi(transformation_direction,'target')
+        avw.hdr.dime.datatype = 8; % 32 bits
+    else
+        avw.hdr.dime.datatype = 4; % 16 bits   %%% Else can be 16bits is fine
+    end
+    
     avw.hdr.dime.bitpix = 16;
     avw.hdr.dime.dim(2:4) = size(Idef);
 %     avw.hdr.dime.pixdim([3,2,4]) = dxJ;

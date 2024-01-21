@@ -14,8 +14,9 @@ from psutil import virtual_memory
 from tqdm import tqdm
 import tinybrain
 
-PIL.Image.MAX_IMAGE_PIXELS = None
+PIL.Image.MAX_IMAGE_PIXELS = 100000000000000000000000000000000000000
 
+print('hey')
 
 def create_cloud_volume(
     precomputed_path,
@@ -25,7 +26,8 @@ def create_cloud_volume(
     chunk_size,
     parallel=False,
     layer_type="image",
-    dtype="uint16",
+    #dtype="uint8",   ### Tiger changed
+    dtype="uint16",   ### Tiger changed
 ):
     """Create Neuroglancer precomputed volume S3
 
@@ -54,10 +56,12 @@ def create_cloud_volume(
         chunk_size=chunk_size,  # units are voxels
         volume_size=img_size,  # e.g. a cubic millimeter dataset
     )
-    vol = CloudVolume(precomputed_path, info=info, parallel=parallel)
+    vol = CloudVolume(precomputed_path, info=info, parallel=parallel,
+                      compress = False)   ### HACK - TIGER removed compression
     [vol.add_scale((2 ** i, 2 ** i, 1), chunk_size=chunk_size) for i in range(num_mips)]
 
     vol.commit_info()
+    
     return vol
 
 
@@ -88,12 +92,29 @@ def process(z, file_path, layer_path, num_mips):
         num_mips (int): Number of 2x2 downsampling levels in X,Y
     """
     vols = [
-        CloudVolume(layer_path, mip=i, parallel=False, fill_missing=False)
+        CloudVolume(layer_path, mip=i, parallel=True, fill_missing=False,
+                    compress = False)   ### HACK - TIGER removed compression)
         for i in range(num_mips)
     ]
     # array = load_image(file_path)[..., None]
     # array = tf.imread(file_path).T[..., None]
+    #print(np.array(Image.open(file_path)))
+    #print(np.max(np.array(Image.open(file_path))))
+    
+    PIL.Image.MAX_IMAGE_PIXELS = 100000000000000000000000000000000000000
+    
+    print(np.array(Image.open(file_path)).shape)
     array = np.squeeze(np.array(Image.open(file_path))).T[..., None]
+    #array = np.squeeze(Image.open(file_path))
+    
+    ### HACK - TIGER, some reasone "np.squeeze" is converting dtype of array to >u2, so need to manually convert back to uint16
+    #array = np.asarray(array, dtype=np.uint8)
+    array = np.asarray(array, dtype=np.uint16)
+    #print(array.shape)
+    #print(array.max)
+    #print(array.dtype)
+    #print(array)
+    #print(num_mips)
     img_pyramid = tinybrain.accelerated.average_pooling_2x2(array, num_mips)
     vols[0][:, :, z] = array
     for i in range(num_mips - 1):
@@ -118,9 +139,22 @@ def create_precomputed_volume(
     zs = [i[0] for i in files_slices]
     files = np.array([i[1] for i in files_slices])
 
+    print(files_slices)
+
     img_size = get_image_dims(files)
+    print('allocating vol_size: ' + str(img_size))
+    
+    
+    # HACK: - Tiger manually making image large to declare more space
+    # img_size = [12000, 12000, 2000]
+    # print('allocating vol_size: ' + str(img_size))
+       
+    
+    
+    
     # compute num_mips from data size
-    chunk_size = [128, 128, 1]
+    #chunk_size = [128, 128, 1]
+    chunk_size = [640, 640, 1]
     num_mips = calc_hierarchy_levels(img_size, lowest_res=chunk_size[0])
     # convert voxel size from um to nm
     vol = create_cloud_volume(
@@ -139,17 +173,22 @@ def create_precomputed_volume(
             joblib.cpu_count(),
         )
 
-    try:
-        with tqdm_joblib(
-            tqdm(desc="Creating precomputed volume", total=len(files))
-        ) as progress_bar:
-            Parallel(num_procs, timeout=3600, verbose=10)(
-                delayed(process)(z, f, vol.layer_cloudpath, num_mips,)
-                for z, f in zip(zs, files)
-            )
-    except Exception as e:
-        print(e)
-        print("timed out on a slice. moving on to the next step of pipeline")
+    print("num_procs: " + str(num_procs))
+    #try:
+        #num_mips = 2
+        #print(num_mips)
+        
+    with tqdm_joblib(
+        tqdm(desc="Creating precomputed volume", total=len(files))
+    ) as progress_bar:
+        Parallel(num_procs, timeout=3600, verbose=10)(
+            delayed(process)(z, f, vol.layer_cloudpath, num_mips,)
+            for z, f in zip(zs, files)
+        )
+        
+    #except Exception as e:
+    #    print(e)
+    #    print("timed out on a slice. moving on to the next step of pipeline")
 
 
 if __name__ == "__main__":

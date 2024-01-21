@@ -45,6 +45,12 @@ def download_data(s3_path, outfile, desired_resolution, resample_isotropic=False
     mip_needed, resolution = get_mip_at_res(vol, np.array([desired_resolution] * 3))
     vol = CloudVolume(s3_path, mip=mip_needed, parallel=True)
 
+    print('get resolution')
+    print(resolution)
+    
+    print(vol.dtype)
+    print(vol.shape)
+    
     # download img and convert to C order
     img = np.squeeze(vol[:, :, :]).T
     # save out as correct file type
@@ -53,8 +59,14 @@ def download_data(s3_path, outfile, desired_resolution, resample_isotropic=False
     resolution = np.divide(resolution, 1000.0).tolist()
     img_s.SetSpacing(resolution)
     if resample_isotropic:
+        print('RESAMPLING TO ISOTROPIC')
+        print(desired_resolution)
         img_s = imgResample(img_s, np.divide([desired_resolution]*3,1000.))
         resolution = np.divide([desired_resolution]*3,1000.)
+        
+
+    print('FINAL SHAPE')
+    print( sitk.GetArrayFromImage(img_s).shape)
     # if output is tiff, use tiffile
     if 'tif' in outfile.split('.')[-1]:
         tf.imwrite(outfile, sitk.GetArrayFromImage(img_s))

@@ -137,7 +137,7 @@ def register(
 
     # only after stitching autofluorescence channel
     base_path = os.path.expanduser("~/")
-    registration_prefix = f"{base_path}/{exp}_{channel}_registration/"
+    registration_prefix = f"{base_path}/{exp}_{channel}_registration_atlas_25um/"  ### changes name of output folder
     atlas_prefix = f'{base_path}/CloudReg/cloudreg/registration/atlases/'
     target_name = f"{base_path}/autofluorescence_data.tif"
     atlas_name = f"{atlas_prefix}/atlas_data.nrrd"
@@ -145,20 +145,179 @@ def register(
     parcellation_hr_name = f"{atlas_prefix}/parcellation_data.tif"
 
     # download downsampled autofluorescence channel
-    print("downloading input data for registration...")
+    print("downloading input data for registration... YO")
+    
+    print('Registration minimum resolution is: ' + str(registration_resolution))
+    
+    
     # convert to nanometers
     registration_resolution *= 1000.0 
-    # download raw data at lowest 15 microns
-    voxel_size = download_data(input_s3_path, target_name, 15000)
-    # download atlas and parcellations at registration resolution
-    _ = download_data(atlas_s3_path, atlas_name, registration_resolution, resample_isotropic=True)
-    _ = download_data(parcellation_s3_path, parcellation_name, registration_resolution, resample_isotropic=True)
-    # also download high resolution parcellations for final transformation
-    parcellation_voxel_size, parcellation_image_size = download_data(parcellation_s3_path, parcellation_hr_name, 10000, return_size=True)
+    
+   
+    
 
+    
+    #fixed_scale = [1.0, 1.0, 0.75]   ### current run is with this
+    
+    
+    
+    
+    
+    # download raw data at lowest 15 microns  15000, low res 30000
+    # voxel_size = download_data(input_s3_path, target_name, resample_isotropic=True, desired_resolution=20000)
+    
+    #voxel_size = [23.590400000000002, 23.590400000000002, 4.8]
+
+    #voxel_size = [9.22, 9.22, 10]
+    
+    #voxel_size = [18.44, 18.44, 10]
+    
+    """ Tiger skipping this download
+    
+            ***WILL NOT WRITE A NEW AUTOFLUORESCENCE FILE!!!
+    """
+    print('SKIPPING DOWNLOAD OF AUTOFLUORESCENCE')
+    #voxel_size = [9.216, 9.216, 6.0]   ### for cuprizone data
+    
+    
+    #voxel_size = [8.0, 8.0, 5.0]     ### for small 5x volume 8bit
+    #voxel_size = [12.0, 12.0, 3.75]  ### after rescaling to 75% of original  ### for small 5x volume 8bit
+    
+    
+    #voxel_size = [11.52, 11.52, 5.0]  ### after rescaling for 5x LARGER volume
+    #voxel_size = [9.6, 9.6, 5.0]
+    #voxel_size = [8.0, 8.0, 5.0]
+
+    
+    #voxel_size = [11.04, 11.04, 9.0]
+    voxel_size=[20, 20, 20]
+    
+    
+        
+    
+    
+    """ Write function to pad the autofluorescence data
+    
+            how come this is changing the size of the atlases???
+    """
+    print('RESCALING AUTOFLUORESCENT DATA')
+    # import tifffile as tiff
+    # #target_name = 'autofluorescence_data.tif'
+    # im = tiff.imread(target_name)
+    
+    
+    # dim = im.shape
+    
+    #voxel_size = np.moveaxis(np.asarray(voxel_size), -1, 0)
+    
+    
+    ### make lateral dimension (waist) at least 14mm
+    # x_p = y_p = z_p = 0;
+    # y_min = 14000
+    # if dim[2] * voxel_size[0] <= y_min:
+    #     missing = y_min - (dim[2] * voxel_size[0])
+    #     y_p = int((missing/2)/ voxel_size[0])  ### scale back to num voxels
+    
+    
+    # ### make vertical dimension (top to bottom) at least 17 mm
+    # x_min = 17000
+    # if dim[1] * voxel_size[1] <= x_min:
+    #     missing = x_min - (dim[1] * voxel_size[1])
+    #     x_p = int((missing/2)/ voxel_size[1])  ### scale back to num voxels
+    
+
+
+    # ### make Z dimension at least 12 mm
+    # z_min = 10000
+    # if dim[0] * voxel_size[-1] <= z_min:
+        
+    #     missing = z_min - (dim[0] * voxel_size[-1])
+    #     z_p = int((missing/2)/ voxel_size[-1])  ### scale back to num voxels
+    
+    
+    
+    # width = ((z_p, z_p), (x_p, x_p), (y_p, y_p))
+    # im_pad = np.pad(im, width, constant_values = 0)
+ 
+    
+    """ ### MASK OUT PORTIONS OF TISSUE """
+    # im_pad[:, 0:202, :] = 0
+    # im_pad[:, 1263:-1, :] = 0
+    
+    #im_pad[:, 0:392, :] = 0
+    #im_pad[:, 1180:-1, :] = 0    
+    
+    
+    ### take out right hemisphere
+    #im_pad[:, :, 665:-1] = 0
+    
+ 
+    #tiff.imsave(target_name, im_pad)
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+    # download atlas and parcellations at registration resolution
+    print('First download')
+    print(voxel_size)
+    
+    
+    
+    ### HACK - Tiger, voxel_size needs to be a numpy array so can actually multiply later, or else makes a 1000 entry array during multiplication...
+    voxel_size = np.asarray(voxel_size)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    """ Tiger hack, do I need these every time??? """
+    print('SKIPPING DOWNLOAD OF ATLAS')
+    # atlas_vox_size = download_data(atlas_s3_path, atlas_name, registration_resolution, resample_isotropic=True)
+    # print('downloaded atlas')
+    # print(atlas_vox_size)
+
+    
+    
+    # parcel_vox_size = download_data(parcellation_s3_path, parcellation_name, registration_resolution, resample_isotropic=True)
+    # print('downloaded parcel')
+    # print(parcel_vox_size)    
+
+    
+    
+    # also download high resolution parcellations for final transformation
+    microns_min = 20000
+    # parcellation_voxel_size, parcellation_image_size = download_data(parcellation_s3_path, parcellation_hr_name, microns_min, resample_isotropic=True, return_size=True)
+
+    
+    print('parcellation voxel size')
+    ### for microns_min = 20000
+    parcellation_voxel_size = [20.0, 20.0, 20.0]
+    #parcellation_image_size = [660, 400, 1140]
+    parcellation_image_size = [660, 400, 570] ### SINCE WE DOWNSAMPLED???
+
+
+    print(parcellation_voxel_size)
+    print(parcellation_image_size)
+
+
+
+    print(orientation)
+    print(atlas_orientation)
+
+    
+    
     # initialize affine transformation for data
-    # atlas_res = 100
-    # atlas_s3_path = ara_average_data_link(atlas_res)
     initial_affine = get_affine_matrix(
         translation,
         rotation,
@@ -166,22 +325,55 @@ def register(
         orientation,
         fixed_scale,
         atlas_s3_path,
+        #center=True
     )
+    
+    
+    ### red --> first axis, Posterior, then green --> second axis, Inferior, then right --> Right (PIR) overall allen
+    print(initial_affine)
+    
+
+    
+    # this is the initialization for registration
+    target_affine = get_affine_matrix(
+        [0] * 3, [0] * 3, orientation, orientation, 1.0, input_s3_path)#, center=True)
+
+    # get viz link from input link
+    viz_link = create_viz_link(
+        [input_s3_path, atlas_s3_path],
+        affine_matrices=[target_affine, initial_affine],
+    )
+
+    # ask user if this initialization looks right
+    # user_input = ""
+    # while user_input == "":
+    #     user_input = input(f"Does this initialization look right? {viz_link} (y/n): ")
+    # # if no quit and ask for another initialization
+    # if user_input == "n":
+    #     raise (Exception("Please rerun with new initialization"))
+        
+        
+        
+        
+
 
     # run registration
     affine_string = [", ".join(map(str, i)) for i in initial_affine]
     affine_string = "; ".join(affine_string)
     print(affine_string)
+    print('bias_correction is: ' + str(bias_correction))
     matlab_registration_command = f"""
         matlab -nodisplay -nosplash -nodesktop -r \"niter={num_iterations};sigmaR={regularization};missing_data_correction={int(missing_data_correction)};grid_correction={int(grid_correction)};bias_correction={int(bias_correction)};base_path=\'{base_path}\';target_name=\'{target_name}\';registration_prefix=\'{registration_prefix}\';atlas_prefix=\'{atlas_prefix}\';dxJ0={voxel_size};fixed_scale={fixed_scale};initial_affine=[{affine_string}];parcellation_voxel_size={parcellation_voxel_size};parcellation_image_size={parcellation_image_size};run(\'~/CloudReg/cloudreg/registration/map_nonuniform_multiscale_v02_mouse_gauss_newton.m\'); exit;\"
     """
+    #-nodisplay -nosplash -nodesktop
+    
     print(matlab_registration_command)
     subprocess.run(shlex.split(matlab_registration_command))
 
     # save results to S3
-    if log_s3_path:
-        # sync registration results to log_s3_path
-        aws_cli(["s3", "sync", registration_prefix, log_s3_path])
+    # if log_s3_path:
+    #     # sync registration results to log_s3_path
+    #     aws_cli(["s3", "sync", registration_prefix, log_s3_path])
 
     # upload high res deformed atlas and deformed target to S3
     ingest_image_stack(
@@ -240,6 +432,7 @@ if __name__ == "__main__":
         help="3-letter orientation of data. i.e. LPS",
         type=str,
         default='PIR'
+        #default='PSR'
     )
 
     # affine initialization args
@@ -258,14 +451,38 @@ if __name__ == "__main__":
         help="Initial translation in x,y,z respectively in microns.",
         nargs="+",
         type=float,
-        default=[0, 0, 0],
+        #default=[0, -400, -520],     ### for small 5x volume 8bit
+        #default=[-300, 2500, -300],      ### for LARGER volume 5x
+        #default=[0, -1500, -1200],              ### for ZOOMED OUT
+        #default=[-600, -1200, 5200]
+        #default=[-400, -1700, 5600]             ### for ZOOMED OUT BLANK
+        #default=[30,7500,11000],    ### for BRAIN to atlas
+        
+        
+        #default=[-500, 2500, 6500], ### for autofluorescence
+        default = [0, 0, 0]
+        
+        #default=[0, 3000, 6000],   ### for ROTATED volume
+        
+        
+            # X moves it left/right
+            # Y moves it +Y (is down!!!)
     )
     parser.add_argument(
         "--rotation",
         help="Initial rotation in x,y,z respectively in degrees.",
         nargs="+",
         type=float,
-        default=[0, 0, 0],
+        #default=[5, 0, -8],         ### for small 5x volume 8bit
+        #default=[4, 0, -8],           ### for LARGER volume 5x
+        #default=[12, 0, 0],           ### for ZOOMED OUT BLANK
+        
+        #default=[0,0,0],    ### for BRAIN to atlas
+        
+        default=[0, 0, 0], ### for autofluorescence
+        
+                ### rotation in X tilts it forward/backward
+                ### rotation in Z rotates it left/right clockwise
     )
 
     # preprocessing args
@@ -289,6 +506,8 @@ if __name__ == "__main__":
         type=eval,
         choices=[True, False],
         default='False',
+        
+        #default='True',
     )
 
     # registration params
@@ -297,12 +516,20 @@ if __name__ == "__main__":
         help="Weight of the regularization. Bigger regularization means less regularization. Default is 5e3",
         type=float,
         default=5e3,
+        #default=5e4  ### wasn't great at 5e1, was slightly worse at 5e4 but also at 100 microns doing tests so not accurate at all
     )
     parser.add_argument(
         "--iterations",
         help="Number of iterations to do at low resolution. Default is 5000.",
         type=int,
-        default=3000,
+        #default=5000,
+        #default=3000,   ### used this before
+        #default=1700,
+        #default=1000,
+        #default=5000
+        #default=5,    ### for testing
+        default=500,
+        
     )
     parser.add_argument(
         "--registration_resolution",

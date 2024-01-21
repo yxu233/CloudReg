@@ -170,6 +170,25 @@ def get_layer_json(s3_layer_path, affine_matrix, output_resolution):
         url = f"precomputed://{mapping[s3_url.bucket]}/{s3_url.key}"
     else:
         url = f"precomputed://{s3_layer_path}"
+        
+        ### HACK - TIGER
+        #if s3_layer_path =='file:///media/user/FantomHD1/Lightsheet_zeiss/tiger/TX_m45_bigbrain_5x_8_bit_stitched/export_TIFFs/output/':
+        #if s3_layer_path =='file:///media/user/FantomHD/Lightsheet_zeiss/tiger/export_2D_slices/ch2/output_5x_large/':
+        
+        if s3_layer_path == 'file:///media/user/FantomHD/Lightsheet_training/M77_auto_fluorescence_only_wrong_genotype/TIFF_sequence/NEUROGLANCER_c0002/':
+        #if s3_layer_path =='file:///media/user/FantomHD/Lightsheet_training/M77_auto_fluorescence_only_wrong_genotype/TIFF_sequence/NEUROGLANCER/':
+        #if s3_layer_path == 'file:///media/user/FantomHD/Lightsheet_training/M70_MoE_Caspr_tdT/TIFF_sequence_M70_rotated_brain/c0003/':
+            print(s3_layer_path)
+            url = "precomputed://http://127.0.0.1:9022"
+            print(vol.shape)
+
+        #if s3_layer_path =='file:///media/user/TigerDrive2/M60/Exported/zoomed_out_NEUROGLANCER/c002/registered/':
+        
+        if s3_layer_path == 'file:///media/user/FantomHD/Lightsheet_training/M70_MoE_Caspr_tdT_AAVs/TIFF_sequence_M70_rotated_brain/c0003/':
+            print(s3_layer_path)
+            url = "precomputed://http://127.0.0.1:9015"
+            print(vol.shape)
+
 
     # layer_data['source']['transform']['matrix'] = affine[:3,:].tolist()
     layer_data = {

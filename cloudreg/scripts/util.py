@@ -15,7 +15,9 @@ from awscli.clidriver import create_clidriver
 
 
 ### image preprocessing
-def get_bias_field(img, mask=None, scale=1.0, niters=[50, 50, 50, 50]):
+#def get_bias_field(img, mask=None, scale=1, niters=[50, 50, 50, 50]):   ### TIGER CHANGED SCALE TO 0.25 from 1 (even below it suggests 0.25)
+
+def get_bias_field(img, mask=None, scale=0.25, niters=[50, 50, 50, 50]):
     """Correct bias field in image using the N4ITK algorithm (http://bit.ly/2oFwAun)
 
     Args:
@@ -39,6 +41,8 @@ def get_bias_field(img, mask=None, scale=1.0, niters=[50, 50, 50, 50]):
     spacing = np.array(img_rescaled.GetSpacing()) / scale
     img_ds = imgResample(img_rescaled, spacing=spacing)
     img_ds = sitk.Cast(img_ds, sitk.sitkFloat32)
+    
+    print('N4ITK')
 
     # Calculate bias
     if mask is None:
@@ -56,6 +60,8 @@ def get_bias_field(img, mask=None, scale=1.0, niters=[50, 50, 50, 50]):
 
     # Upsample bias
     bias = imgResample(bias_ds, spacing=img.GetSpacing(), size=img.GetSize())
+    
+    print('N4ITK done')
 
     return bias
 
