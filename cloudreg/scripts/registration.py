@@ -107,7 +107,8 @@ def register(
     bias_correction,
     regularization,
     num_iterations,
-    registration_resolution
+    registration_resolution,
+    output_local_path = "~/"
 ):
     """Run EM-LDDMM registration on precomputed volume at input_s3_path
 
@@ -129,6 +130,8 @@ def register(
         num_iterations (int): Number of iterations of EM-LDDMM to run
         registration_resolution (int): Minimum resolution at which the registration is run.
     """
+
+    download_atlas = True
 
     # get volume info
     s3_url = S3Url(input_s3_path)
@@ -152,9 +155,7 @@ def register(
     
     # convert to nanometers
     registration_resolution *= 1000.0 
-    
-   
-    
+
 
     
     #fixed_scale = [1.0, 1.0, 0.75]   ### current run is with this
@@ -294,7 +295,7 @@ def register(
     # print(parcel_vox_size)    
 
     
-    
+
     # also download high resolution parcellations for final transformation
     microns_min = 20000
     # parcellation_voxel_size, parcellation_image_size = download_data(parcellation_s3_path, parcellation_hr_name, microns_min, resample_isotropic=True, return_size=True)
@@ -361,16 +362,20 @@ def register(
     affine_string = [", ".join(map(str, i)) for i in initial_affine]
     affine_string = "; ".join(affine_string)
     print(affine_string)
-    print('bias_correction is: ' + str(bias_correction))
+
+
+    # make sure the version of matlab is correct (e.g. CIS computers may call old version of matlab)
     matlab_registration_command = f"""
-        matlab -nodisplay -nosplash -nodesktop -r \"niter={num_iterations};sigmaR={regularization};missing_data_correction={int(missing_data_correction)};grid_correction={int(grid_correction)};bias_correction={int(bias_correction)};base_path=\'{base_path}\';target_name=\'{target_name}\';registration_prefix=\'{registration_prefix}\';atlas_prefix=\'{atlas_prefix}\';dxJ0={voxel_size};fixed_scale={fixed_scale};initial_affine=[{affine_string}];parcellation_voxel_size={parcellation_voxel_size};parcellation_image_size={parcellation_image_size};run(\'~/CloudReg/cloudreg/registration/map_nonuniform_multiscale_v02_mouse_gauss_newton.m\'); exit;\"
+        matlab.r2017a -nodisplay -nosplash -nodesktop -r \"niter={num_iterations};sigmaR={regularization};missing_data_correction={int(missing_data_correction)};grid_correction={int(grid_correction)};bias_correction={int(bias_correction)};base_path=\'{base_path}\';target_name=\'{target_name}\';registration_prefix=\'{registration_prefix}\';atlas_prefix=\'{atlas_prefix}\';dxJ0={voxel_size};fixed_scale={fixed_scale};initial_affine=[{affine_string}];parcellation_voxel_size={parcellation_voxel_size};parcellation_image_size={parcellation_image_size};run(\'~/CloudReg/cloudreg/registration/map_nonuniform_multiscale_v02_mouse_gauss_newton.m\'); exit;\"
     """
     #-nodisplay -nosplash -nodesktop
     
     print(matlab_registration_command)
     subprocess.run(shlex.split(matlab_registration_command))
 
+
     # save results to S3
+
     # if log_s3_path:
     #     # sync registration results to log_s3_path
     #     aws_cli(["s3", "sync", registration_prefix, log_s3_path])
@@ -378,7 +383,7 @@ def register(
     # upload high res deformed atlas and deformed target to S3
     ingest_image_stack(
         output_s3_path,
-        voxel_size*1000,
+        [v*1000 for v in voxel_size],
         f"{registration_prefix}/downloop_1_labels_to_target_highres.img",
         "img",
         "uint64",
@@ -537,6 +542,12 @@ if __name__ == "__main__":
         type=int,
         default=100,
     )
+    parser.add_argument(
+        "--output_local_path",
+        help="Output directory where transformation and data intermediates are stored. Default is ~/.",
+        type=str,
+        default="~/",
+    )
 
     args = parser.parse_args()
 
@@ -556,5 +567,6 @@ if __name__ == "__main__":
         args.bias_correction,
         args.regularization,
         args.iterations,
-        args.registration_resolution
+        args.registration_resolution,
+        args.output_local_path
     )
