@@ -140,7 +140,7 @@ def register(
 
     # only after stitching autofluorescence channel
     base_path = os.path.expanduser("~/")
-    registration_prefix = f"{base_path}/{exp}_{channel}_registration_atlas_25um/"  ### changes name of output folder
+    registration_prefix = f"{base_path}/{exp}_{channel}_registration_atlas_30um_1e4_regularize_CONTINUE_NOBIASCORR/"  ### changes name of output folder
     atlas_prefix = f'{base_path}/CloudReg/cloudreg/registration/atlases/'
     target_name = f"{base_path}/autofluorescence_data.tif"
     atlas_name = f"{atlas_prefix}/atlas_data.nrrd"
@@ -283,13 +283,13 @@ def register(
     
     
     """ Tiger hack, do I need these every time??? """
-    print('SKIPPING DOWNLOAD OF ATLAS')
+    # print('SKIPPING DOWNLOAD OF ATLAS')
     # atlas_vox_size = download_data(atlas_s3_path, atlas_name, registration_resolution, resample_isotropic=True)
     # print('downloaded atlas')
     # print(atlas_vox_size)
 
     
-    
+
     # parcel_vox_size = download_data(parcellation_s3_path, parcellation_name, registration_resolution, resample_isotropic=True)
     # print('downloaded parcel')
     # print(parcel_vox_size)    
@@ -366,7 +366,7 @@ def register(
 
     # make sure the version of matlab is correct (e.g. CIS computers may call old version of matlab)
     matlab_registration_command = f"""
-        matlab.r2017a -nodisplay -nosplash -nodesktop -r \"niter={num_iterations};sigmaR={regularization};missing_data_correction={int(missing_data_correction)};grid_correction={int(grid_correction)};bias_correction={int(bias_correction)};base_path=\'{base_path}\';target_name=\'{target_name}\';registration_prefix=\'{registration_prefix}\';atlas_prefix=\'{atlas_prefix}\';dxJ0={voxel_size};fixed_scale={fixed_scale};initial_affine=[{affine_string}];parcellation_voxel_size={parcellation_voxel_size};parcellation_image_size={parcellation_image_size};run(\'~/CloudReg/cloudreg/registration/map_nonuniform_multiscale_v02_mouse_gauss_newton.m\'); exit;\"
+        matlab -nodisplay -nosplash -nodesktop -r \"niter={num_iterations};sigmaR={regularization};missing_data_correction={int(missing_data_correction)};grid_correction={int(grid_correction)};bias_correction={int(bias_correction)};base_path=\'{base_path}\';target_name=\'{target_name}\';registration_prefix=\'{registration_prefix}\';atlas_prefix=\'{atlas_prefix}\';dxJ0={voxel_size};fixed_scale={fixed_scale};initial_affine=[{affine_string}];parcellation_voxel_size={parcellation_voxel_size};parcellation_image_size={parcellation_image_size};run(\'~/CloudReg/cloudreg/registration/map_nonuniform_multiscale_v02_mouse_gauss_newton.m\'); exit;\"
     """
     #-nodisplay -nosplash -nodesktop
     
@@ -520,8 +520,8 @@ if __name__ == "__main__":
         "--regularization",
         help="Weight of the regularization. Bigger regularization means less regularization. Default is 5e3",
         type=float,
-        default=5e3,
-        #default=5e4  ### wasn't great at 5e1, was slightly worse at 5e4 but also at 100 microns doing tests so not accurate at all
+        #default=5e3,
+        default=1e4  ### wasn't great at 5e1, was slightly worse at 5e4 but also at 100 microns doing tests so not accurate at all
     )
     parser.add_argument(
         "--iterations",
@@ -533,7 +533,7 @@ if __name__ == "__main__":
         #default=1000,
         #default=5000
         #default=5,    ### for testing
-        default=500,
+        default=200,
         
     )
     parser.add_argument(

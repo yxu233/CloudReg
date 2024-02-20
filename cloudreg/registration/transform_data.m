@@ -178,7 +178,7 @@ function [] = transform_data(path_to_source,source_voxel_size,path_to_affine,pat
         Zs = B(3,1)*XT + B(3,2)*YT + B(3,3)*ZT + B(3,4);
         
         disp('applying non-affine');
-        clearvars -except yIp xIp zIp Ip interpolation_method Atransy Atransx Atransz destination_shape destination_voxel_size path_to_output transx transy transz XV YV ZV yV xV zV Xs Ys Zs
+        clearvars -except yIp xIp zIp Ip interpolation_method Atransy Atransx Atransz destination_shape destination_voxel_size path_to_output transx transy transz XV YV ZV yV xV zV Xs Ys Zs transformation_direction
         % the resulting transformations are  the shape of the target
 		F = griddedInterpolant({yV,xV,zV},transx-XV,'linear','nearest');
 		Atransx = F(Ys,Xs,Zs) + Xs;
@@ -195,7 +195,7 @@ function [] = transform_data(path_to_source,source_voxel_size,path_to_affine,pat
     % so this will be a bit slow
     %
     disp('clearing vars')
-    clearvars -except yIp xIp zIp Ip interpolation_method Atransy Atransx Atransz destination_shape destination_voxel_size path_to_output
+    clearvars -except yIp xIp zIp Ip interpolation_method Atransy Atransx Atransz destination_shape destination_voxel_size path_to_output transformation_direction
     interp_slice = 0;
     F = griddedInterpolant({yIp,xIp,zIp},Ip,interpolation_method,'nearest');
     if interp_slice
