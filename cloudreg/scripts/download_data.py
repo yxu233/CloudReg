@@ -29,7 +29,7 @@ def get_mip_at_res(vol, resolution):
     return tmp_mip, tmp_res
 
 
-def download_data(s3_path, outfile, desired_resolution, resample_isotropic=False, return_size=False):
+def download_data(s3_path, outfile, desired_resolution, resample_isotropic=False, return_size=False, dtype='uint8'):
     """Download whole precomputed volume from S3 at desired resolution and optionally resample data to be isotropic
 
     Args:
@@ -53,6 +53,21 @@ def download_data(s3_path, outfile, desired_resolution, resample_isotropic=False
     
     # download img and convert to C order
     img = np.squeeze(vol[:, :, :]).T
+    
+    
+    # from skimage import img_as_ubyte
+    # if dtype == 'uint8':
+    #     img = img_as_ubyte(img)
+        
+    #     print('CONVERTED TO UINT8')
+    #     print(img.dtype)
+    
+    
+    
+    
+    
+    
+    
     # save out as correct file type
     img_s = sitk.GetImageFromArray(img)
     # set spacing in microns
