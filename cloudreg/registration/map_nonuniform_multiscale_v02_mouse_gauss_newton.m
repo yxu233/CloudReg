@@ -136,27 +136,37 @@ end
 %%%% end parameters %%%%
 
 
+
+%% TIGER - BEGINNING OF DOWNLOOP
 downloop_start = 1;
-for downloop = downloop_start : 1
+for downloop = downloop_start : 2
+    
+%downloop_start = 1;
+%for downloop = downloop_start : 1
 
     if downloop > 1
-        eV = eV/2;
+       eV = eV/2;
+        
+        %% TIGER - changed number of iterations to be lower for testing
         niter = 500;
     end
 
     prefix = registration_prefix;
     
 
-    if downloop == 1
+    %% TIGER - swapped downloop 2 and 1 so it starts off low res (50um) and then goes to high res
+    if downloop == 2
         template_name = strcat(atlas_prefix,'/atlas_data.nrrd');
         label_name = strcat(atlas_prefix, '/parcellation_data.nrrd');
 
     %% for now make this single scale
-    elseif downloop == 2
+    elseif downloop == 1
         % return
-        % template_name = strcat(atlas_prefix,'/atlas_data.nrrd');
-        % template_name = strcat(atlas_prefix,'/average_template_50.nrrd');
-        % label_name = strcat(atlas_prefix, '/annotation_50.nrrd');
+        %template_name = strcat(atlas_prefix,'/atlas_data.nrrd');
+        template_name = strcat(atlas_prefix,'/average_template_100.nrrd');
+        label_name = strcat(atlas_prefix, '/annotation_100.nrrd');
+        
+        disp('Running with downloop!!!')
         
     end
     
@@ -171,6 +181,7 @@ for downloop = downloop_start : 1
         vname = [filepath,filesep, name,['downloop_' num2str(downloop-1) '_'], ext , 'v.mat'];
         Aname = [filepath,filesep, name,['downloop_' num2str(downloop-1) '_'], ext , 'A.mat'];
         coeffsname = [filepath,filesep, name,['downloop_' num2str(downloop-1) '_'], ext , 'coeffs.mat'];
+        
 
     end
 
@@ -314,7 +325,10 @@ for downloop = downloop_start : 1
     
     %%
     % basic inhomogeneity correction based on histogaam flow
-    % first find a low threshold for taking logs
+    % first find a low threshold for taking logs 
+    %% TIGER removed this
+    
+    
     J = J0;
     
     range = [min(J(:)), max(J(:))];
@@ -333,16 +347,19 @@ for downloop = downloop_start : 1
     plot(bins,hist_)
     thresh = bins(find(hist_==max(hist_),1,'first'))*0.5;
     
-    
-    
+   
     J(J<thresh) = thresh;
+
     J = log(J);
     Jbar = mean(J(:));
     Jstd = std(J(:));
     J = J - Jbar;
     J = J/Jstd;
     
-    % about 1 mm of padding
+    
+%% Why add padding?
+
+   % about 1 mm of padding
     padtemp = round(1000/dxI(1));
     
     J = padarray(J,[1,1,1]*padtemp,'symmetric');
@@ -955,8 +972,33 @@ for downloop = downloop_start : 1
             end
             % write deformed I every time
             saveas(3,[prefix 'fAphiI.png'])
+                       
         end
         
+
+            
+        %% TIGER - added more saving!!!
+        if ~mod(it-1,11)
+                    parcellation_path = [atlas_prefix 'parcellation_data.tif'];
+                    output_path_atlas = [prefix 'labels_to_target_highres.img'];
+                    output_path_target = [prefix 'target_to_labels_highres.img'];
+                    
+                    % since transformation takes lots of memory, use dxJ0 = [10 10 10] and set nxJ0 acordingly
+                    dxJT = dxJ0;
+                    % nxJT = nxJ0;
+                    scalef = (dxJ0./dxJT);
+               
+                    nxJT = fix(nxJ0.*scalef);
+                
+                    vname = [prefix 'v.mat'];
+               
+                    Aname = [prefix 'A.mat'];
+
+
+                  save([prefix 'TIGER_save_transform_params.mat'],'target_name','parcellation_path','parcellation_voxel_size','parcellation_image_size','output_path_target','output_path_atlas','nxJ0','dxJ0','nxJT','dxJT','dxI','vname','Aname', 'it')
+        end
+        
+
         
         save([prefix 'A.mat'],'A')
         if ~mod(it-1,100)
@@ -1033,8 +1075,8 @@ for downloop = downloop_start : 1
     avw.img = Ji;
     avw_img_write(avw,[prefix 'target_to_atlas_low_res_pad.img'])
     
-    
 end % of downloop
+
 
 % save out high resolution parcellations transformed to input data
 % and input data transformed to parcellations
@@ -1053,6 +1095,7 @@ dxJT = dxJ0;
 scalef = (dxJ0./dxJT);
 nxJT = fix(nxJ0.*scalef);
 save([prefix 'transform_params.mat'],'target_name','parcellation_path','parcellation_voxel_size','parcellation_image_size','output_path_target','output_path_atlas','nxJ0','dxJ0','nxJT','dxJT','dxI','vname','Aname')
+
 transform_data(target_name,dxJ0,Aname,vname,dxI,parcellation_voxel_size,parcellation_image_size,'atlas',output_path_target,'linear')
 transform_data(parcellation_path,parcellation_voxel_size,Aname,vname,dxI,dxJT,nxJT,'target',output_path_atlas,'nearest')
 

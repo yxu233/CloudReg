@@ -137,15 +137,53 @@ def register(
     s3_url = S3Url(input_s3_path)
     channel = s3_url.key.split("/")[-1]
     exp = s3_url.key.split("/")[-2]
+    
+    
 
     # only after stitching autofluorescence channel
+    
+    
+    output_local_path = '/media/user/FantomHD/Test_registration/'
     base_path = os.path.expanduser("~/")
-    registration_prefix = f"{base_path}/{exp}_{channel}_registration_atlas_30um_1e4_regularize_CONTINUE_NOBIASCORR/"  ### changes name of output folder
-    atlas_prefix = f'{base_path}/CloudReg/cloudreg/registration/atlases/'
-    target_name = f"{base_path}/autofluorescence_data.tif"
+
+    #registration_prefix = f"{output_local_path}/{exp}_{channel}_registration_atlas_NEW_NOPAD_PRINCETON_ATLAS_40um_warmstart_100um_NO_BIASCORR_FAKED_RESOLUTION/"  ### changes name of output folder
+    #registration_prefix = f"{output_local_path}/{exp}_{channel}_registration_atlas_M91_OLD_TEST_NEW_NOPAD_PERENS_ATLAS_40um_warmstart_100um_NOBIASCORR_FAKED_RESOLUTION/"  ### changes name of output folder
+
+    registration_prefix = f"{output_local_path}/{exp}_{channel}_registration_atlas_M91_OLD_TEST_NEW_NOPAD_ALLEN_ATLAS_30um_warmstart_100um_NOBIASCORR/"  ### changes name of output folder
+
+
+        
+    perens = 0
+    
+    
+    if perens:
+        #atlas_prefix = f'{base_path}/.brainglobe/perens_lsfm_mouse_20um_v1.0/'
+        
+        
+        atlas_prefix = f'{base_path}/.brainglobe/princeton_mouse_20um_v1.0/'
+        
+        
+    else:
+        atlas_prefix = f'{base_path}/CloudReg/cloudreg/registration/atlases/'
+
+
+    
+    #target_name = f"{base_path}/autofluorescence_data_NOPAD.tif"
+    target_name = f"{base_path}/autofluorescence_data_M91_OLD_CUBIC_NOPAD.tif"
+    
     atlas_name = f"{atlas_prefix}/atlas_data.nrrd"
+    #atlas_name = f"{atlas_prefix}/atlas_data_8bit.nrrd"
+        
     parcellation_name = f"{atlas_prefix}/parcellation_data.nrrd"
     parcellation_hr_name = f"{atlas_prefix}/parcellation_data.tif"
+    
+
+        
+                
+        
+        
+    
+    
 
     # download downsampled autofluorescence channel
     print("downloading input data for registration... YO")
@@ -155,146 +193,44 @@ def register(
     
     # convert to nanometers
     registration_resolution *= 1000.0 
-
-
-    
-    #fixed_scale = [1.0, 1.0, 0.75]   ### current run is with this
-    
-    
-    
-    
     
     # download raw data at lowest 15 microns  15000, low res 30000
     # voxel_size = download_data(input_s3_path, target_name, resample_isotropic=True, desired_resolution=20000)
     
-    #voxel_size = [23.590400000000002, 23.590400000000002, 4.8]
-
-    #voxel_size = [9.22, 9.22, 10]
-    
-    #voxel_size = [18.44, 18.44, 10]
     
     """ Tiger skipping this download
     
             ***WILL NOT WRITE A NEW AUTOFLUORESCENCE FILE!!!
     """
     print('SKIPPING DOWNLOAD OF AUTOFLUORESCENCE')
-    #voxel_size = [9.216, 9.216, 6.0]   ### for cuprizone data
-    
-    
-    #voxel_size = [8.0, 8.0, 5.0]     ### for small 5x volume 8bit
-    #voxel_size = [12.0, 12.0, 3.75]  ### after rescaling to 75% of original  ### for small 5x volume 8bit
-    
-    
-    #voxel_size = [11.52, 11.52, 5.0]  ### after rescaling for 5x LARGER volume
-    #voxel_size = [9.6, 9.6, 5.0]
-    #voxel_size = [8.0, 8.0, 5.0]
 
-    
-    #voxel_size = [11.04, 11.04, 9.0]
     voxel_size=[20, 20, 20]
     
     
-        
-    
-    
-    """ Write function to pad the autofluorescence data
-    
-            how come this is changing the size of the atlases???
-    """
-    print('RESCALING AUTOFLUORESCENT DATA')
-    # import tifffile as tiff
-    # #target_name = 'autofluorescence_data.tif'
-    # im = tiff.imread(target_name)
-    
-    
-    # dim = im.shape
-    
-    #voxel_size = np.moveaxis(np.asarray(voxel_size), -1, 0)
-    
-    
-    ### make lateral dimension (waist) at least 14mm
-    # x_p = y_p = z_p = 0;
-    # y_min = 14000
-    # if dim[2] * voxel_size[0] <= y_min:
-    #     missing = y_min - (dim[2] * voxel_size[0])
-    #     y_p = int((missing/2)/ voxel_size[0])  ### scale back to num voxels
-    
-    
-    # ### make vertical dimension (top to bottom) at least 17 mm
-    # x_min = 17000
-    # if dim[1] * voxel_size[1] <= x_min:
-    #     missing = x_min - (dim[1] * voxel_size[1])
-    #     x_p = int((missing/2)/ voxel_size[1])  ### scale back to num voxels
-    
-
-
-    # ### make Z dimension at least 12 mm
-    # z_min = 10000
-    # if dim[0] * voxel_size[-1] <= z_min:
-        
-    #     missing = z_min - (dim[0] * voxel_size[-1])
-    #     z_p = int((missing/2)/ voxel_size[-1])  ### scale back to num voxels
-    
-    
-    
-    # width = ((z_p, z_p), (x_p, x_p), (y_p, y_p))
-    # im_pad = np.pad(im, width, constant_values = 0)
- 
-    
-    """ ### MASK OUT PORTIONS OF TISSUE """
-    # im_pad[:, 0:202, :] = 0
-    # im_pad[:, 1263:-1, :] = 0
-    
-    #im_pad[:, 0:392, :] = 0
-    #im_pad[:, 1180:-1, :] = 0    
-    
-    
-    ### take out right hemisphere
-    #im_pad[:, :, 665:-1] = 0
-    
- 
-    #tiff.imsave(target_name, im_pad)
-    
-    
-    
-    
-    
-
-    
-    
-    
-
     # download atlas and parcellations at registration resolution
     print('First download')
     print(voxel_size)
     
-    
-    
+
     ### HACK - Tiger, voxel_size needs to be a numpy array so can actually multiply later, or else makes a 1000 entry array during multiplication...
     voxel_size = np.asarray(voxel_size)
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     """ Tiger hack, do I need these every time??? """
-    # print('SKIPPING DOWNLOAD OF ATLAS')
+
+    print('SKIPPING DOWNLOAD OF ATLAS')
+    
+    # print('desired resolution')
+    # print(registration_resolution)
+
     # atlas_vox_size = download_data(atlas_s3_path, atlas_name, registration_resolution, resample_isotropic=True)
     # print('downloaded atlas')
     # print(atlas_vox_size)
-
     
-
     # parcel_vox_size = download_data(parcellation_s3_path, parcellation_name, registration_resolution, resample_isotropic=True)
     # print('downloaded parcel')
     # print(parcel_vox_size)    
 
-    
 
     # also download high resolution parcellations for final transformation
     microns_min = 20000
@@ -306,6 +242,12 @@ def register(
     parcellation_voxel_size = [20.0, 20.0, 20.0]
     #parcellation_image_size = [660, 400, 1140]
     parcellation_image_size = [660, 400, 570] ### SINCE WE DOWNSAMPLED???
+    
+    
+    if perens:
+        parcellation_voxel_size = [25.0, 25.0, 25.0]
+        parcellation_image_size = [621, 323, 461] ### FOR PERENS
+    
 
 
     print(parcellation_voxel_size)
@@ -520,8 +462,12 @@ if __name__ == "__main__":
         "--regularization",
         help="Weight of the regularization. Bigger regularization means less regularization. Default is 5e3",
         type=float,
-        #default=5e3,
-        default=1e4  ### wasn't great at 5e1, was slightly worse at 5e4 but also at 100 microns doing tests so not accurate at all
+	#default=5e3,
+
+        default=5e3,
+        #default=2e3  ### wasn't great at 5e1, was slightly worse at 5e4 but also at 100 microns doing tests so not accurate at all
+        ### smaller values here tend to force more bending...
+
     )
     parser.add_argument(
         "--iterations",
@@ -533,8 +479,8 @@ if __name__ == "__main__":
         #default=1000,
         #default=5000
         #default=5,    ### for testing
-        default=200,
-        
+        default=800,
+
     )
     parser.add_argument(
         "--registration_resolution",
